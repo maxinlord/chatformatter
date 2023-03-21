@@ -3,8 +3,9 @@ from aiogram import Bot, Dispatcher, types
 from aiogram.utils import executor
 from weightWord import weight_word
 import pyfiglet
+import html
 
-API_TOKEN = '5664499159:AAGW7_RzX4mhsb7_bBT7VyBr7Qg_N75-AVA'
+API_TOKEN = 'токен'
 
 # настройка логгирования
 logging.basicConfig(level=logging.INFO)
@@ -21,6 +22,7 @@ exists_format = '''> &r - реверс
 > &rp[old][new] - заменяет все old буквы на new, пример (&rpst stone -> ttone),
 > &w - подсчет веса слов(-a), подробнее в блоге
 > &a - ASCii арт из слова(буквы) 
+> &at - ASCii translate перевод из букв в символы
 > & - знак останова'''
 
 def replace_with_index(string, old: list, new):
@@ -46,6 +48,41 @@ class TextFormatter:
     @staticmethod
     def reverse(text: str, *args) -> str:
         return text[::-1]
+    
+    @staticmethod
+    def ascii_translate(text):
+        ascii_dict = {
+            'a': '@',
+            'b': '8',
+            'c': '(',
+            'd': '|)',
+            'e': '3',
+            'f': '|=',
+            'g': '9',
+            'h': '#',
+            'i': '!',
+            'j': '_|',
+            'k': '|<',
+            'l': '1',
+            'm': '|\\/|',
+            'n': '|\\|',
+            'o': '0',
+            'p': '|D',
+            'q': '(,)',
+            'r': '|2',
+            's': '5',
+            't': '7',
+            'u': '|_|',
+            'v': '\\/',
+            'w': '|/\\|',
+            'x': '}{',
+            'y': '`/',
+            'z': '2'
+        }
+        for key in ascii_dict:
+            text = text.replace(key, ascii_dict[key])
+            text = text.replace(key.upper(), ascii_dict[key])
+        return html.escape(text)
     
     @staticmethod
     def ascii_art(char: str, *args) -> str:
@@ -81,6 +118,7 @@ class TextFormatter:
         '&t': title,
         '&w': weight_word,
         '&a': ascii_art
+        # '&at': ascii_translate
         # '&rp': replace
     }
 
@@ -104,6 +142,10 @@ class TextFormatter:
                 # list_ind.remove(ind_rp)
                 # continue
                 # list_to_edit.append([text[i:i+2], i, -1])
+            elif text[i:i+3] in '&at':
+                ind_rp = text.index('&at')
+                list_to_edit.append([text[ind_rp:ind_rp+3], ind_rp+3, len(text)])
+                q.append(1)
             elif text[i:i+2] in TextFormatter.format_map:
                 # ind = len(list_ind)-list_ind.index(i)-1
                 list_to_edit.append([text[i:i+2], i+2, len(text)])
@@ -122,6 +164,9 @@ class TextFormatter:
                 old, new = x[0][3:]
                 t = TextFormatter.replace(text[x[1]:x[2]], old, new)
                 to_clean.extend((x[0], x[0][::-1]))
+            elif x[0][:3] == '&at':
+                t = TextFormatter.ascii_translate(text[x[1]:x[2]])
+                to_clean.extend((x[0], x[0][::-1]))
             else:
                 t = TextFormatter.format_map[x[0]](text[x[1]:x[2]])
             text = replace_with_index(text, [x[1], x[2]], t)
@@ -133,7 +178,7 @@ class TextFormatter:
 
 
 
-# print(TextFormatter.format_text('&r&adoom'))
+print(TextFormatter.format_text('&atmaks'))
 # print('ss&rsss'.partition('&'))
 
 
