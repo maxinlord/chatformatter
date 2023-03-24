@@ -3,9 +3,10 @@ import pyfiglet
 art = pyfiglet.figlet_format('maks')
 # print(art)
 
-for i in pyfiglet.FigletFont.getFonts():
-    art = pyfiglet.figlet_format('maks', font=i)
-    print(art, i)
+
+# for i in pyfiglet.FigletFont.getFonts():
+#     art = pyfiglet.figlet_format('maks', font=i)
+#     print(art, i)
 
 a = 'whimsy, univers, thick, smkeyboard, smisome1'
 # def format(text: str):
@@ -27,5 +28,4 @@ a = 'whimsy, univers, thick, smkeyboard, smisome1'
 
 # format('&uThis is&r an apple')
 # format('&rThis is&&u an& apple')
-text = '&rpay'
-print()
+# 
