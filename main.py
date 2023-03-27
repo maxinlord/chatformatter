@@ -10,7 +10,7 @@ import html
 import string
 import wikipedia
 
-API_TOKEN = '5664499159:AAHaLuZeCYV49sB6fMC-bB2nklXfEFHp9Ds'
+API_TOKEN = 'токен'
 
 # настройка логгирования
 logging.basicConfig(level=logging.INFO)
@@ -28,6 +28,7 @@ exists_format = '''> $r - реверс,
 > $a - ASCii арт из слова(буквы),
 > $e - выполняет математические функции, пример ($e5+5 -> 5+5=10)
 > $/ - таким образом можно использовать символ доллара, пример($uсимвол доллара $/ хех -> СИМВОЛ ДОЛЛАРА $ ХЕХ)
+> $ud - переворачивает текст вверх ногами
 > $rp[old][new] - заменяет все old буквы на new, пример ($rpst stone -> ttone),
 > $at - ASCii translate перевод из букв в символы
 > $tl - транслитерация с русского на английский
@@ -123,6 +124,58 @@ class TextFormatter:
             text = text.replace(key.upper(), ru_dict[key])
         return text
     
+    @staticmethod
+    def upside_down(text):
+        """
+        Returns the upside-down version of the input text.
+        """
+        upside_down_chars = {
+            'а': 'ɐ','б': 'ƍ', 'в': 'ʚ', 'г': 'ƣ', 'д': 'q',
+            'е': 'ǝ', 'ё': 'ә', 'ж': 'ж', 'з': 'ε',
+            'и': 'и', 'й': 'ņ', 'к': 'ʞ', 'л': 'v',
+            'м': 'w', 'н': 'н', 'о': 'о', 'п': 'u',
+            'р': 'd', 'с': 's', 'т': 'ɯ', 'у': 'ʎ',
+            'ф': 'ȸ', 'х': 'х', 'ц': 'ǹ', 'ч': 'Һ',
+            'ш': 'm', 'щ': 'mƨ', 'ъ': 'q̵', 'ы': 'ıq',
+            'ь': 'q', 'э': 'є', 'ю': 'oı', 'я': 'ʁ',
+            'А': '∀', 'Б': 'ƍ', 'В': 'ʚ', 'Г': 'ƣ',
+            'Д': 'A', 'Е': 'Ǝ', 'Ё': 'Ә', 'Ж': 'Ж',
+            'З': 'Ɛ', 'И': 'И', 'Й': 'Ņ', 'К': 'ʞ',
+            'Л': 'V', 'М': 'W', 'Н': 'H', 'О': 'O',
+            'П': 'U', 'Р': 'D', 'С': 'S', 'Т': 'Ʌ',
+            'У': 'ʎ', 'Ф': 'ȸ', 'Х': 'X', 'Ц': 'N',
+            'Ч': 'Һ', 'Ш': 'M', 'Щ': 'MƧ', 'Ъ': 'Q̵',
+            'Ы': 'Iq', 'Ь': 'Q', 'Э': 'Є', 'Ю': 'Oı','Я': 'ʁ',
+            'a': 'ɐ', 'b': 'q', 'c': 'ɔ', 'd': 'p',
+            'e': 'ǝ', 'f': 'ɟ', 'g': 'ƃ', 'h': 'ɥ',
+            'i': 'ı', 'j': 'ɾ', 'k': 'ʞ', 'l': 'l',
+            'm': 'ɯ', 'n': 'u', 'o': 'o', 'p': 'd',
+            'q': 'b', 'r': 'ɹ', 's': 's', 't': 'ʇ',
+            'u': 'n', 'v': 'ʌ', 'w': 'ʍ', 'x': 'x',
+            'y': 'ʎ', 'z': 'z', 'A': '∀', 'B': 'q',
+            'C': 'Ɔ', 'D': 'p', 'E': 'Ǝ', 'F': 'Ⅎ',
+            'G': 'פ', 'H': 'H', 'I': 'I', 'J': 'ſ',
+            'K': 'ʞ', 'L': '˥', 'M': 'W', 'N': 'N',
+            'O': 'O', 'P': 'Ԁ', 'Q': 'Q', 'R': 'ᴚ',
+            'S': 'S', 'T': '┴', 'U': '∩', 'V': 'Λ',
+            'W': 'M', 'X': 'X', 'Y': '⅄', 'Z': 'Z',
+            '0': '0', '1': 'Ɩ', '2': 'ᄅ', '3': 'Ɛ',
+            '4': 'ㄣ', '5': 'ϛ', '6': '9', '7': 'ㄥ',
+            '8': '8', '9': '6', '.': '˙', ',': '\'',
+            '\'': ',', '\"': ',,', '!': '¡', '?': '¿',
+            '_': '‾', '&': '⅋', '(': ')', ')': '(',
+            '[': ']', ']': '[', '{': '}', '}': '{',
+            '<': '>', '>': '<', '/': '\\', '\\': '/',
+        }
+
+        upside_down_text = ''
+        for char in text:
+            if char in upside_down_chars:
+                upside_down_text += upside_down_chars[char]
+            else:
+                upside_down_text += char
+
+        return TextFormatter.reverse(upside_down_text)
     # @staticmethod
     # def wiki(text):
     #     wikipedia.set_lang('ru')
@@ -216,7 +269,8 @@ class TextFormatter:
         '$t': title,
         '$w': weight_word,
         '$a': ascii_art,
-        '$e': ev
+        '$e': ev,
+        # '$ud': upside_down
         # '$tl' transliteration
         # '$at': ascii_translate
         # '$rp': replace
@@ -248,6 +302,11 @@ class TextFormatter:
                 break
             elif text[i:i+3] == '$at':
                 ind_rp = text.index('$at')
+                # offset += len(result:=TextFormatter.ascii_translate(text[ind_rp+3:border])) - len(text[ind_rp+3:border])
+                list_to_edit.append([text[ind_rp:ind_rp+3], ind_rp+3, border])
+                break
+            elif text[i:i+3] == '$ud':
+                ind_rp = text.index('$ud')
                 # offset += len(result:=TextFormatter.ascii_translate(text[ind_rp+3:border])) - len(text[ind_rp+3:border])
                 list_to_edit.append([text[ind_rp:ind_rp+3], ind_rp+3, border])
                 break
@@ -287,6 +346,10 @@ class TextFormatter:
                 text = replace_with_index(text, [x[1]-3, x[1]], '스'*3)
                 break
                 # to_clean.append('스'*3)
+            elif x[0] == '$ud':
+                t = TextFormatter.upside_down(text[x[1]:x[2]])
+                text = replace_with_index(text, [x[1]-3, x[1]], '스'*3)
+                break
             else:
                 t = TextFormatter.format_map[x[0]](text[x[1]:x[2]])
                 text = replace_with_index(text, [x[1]-2, x[1]], '스'*2)
@@ -306,7 +369,7 @@ class TextFormatter:
 
 
 
-print(TextFormatter.finite_format_text('$e5+5$ good'))
+print(TextFormatter.finite_format_text('$udты бот'))
 # print('ss&rsss'.partition('&'))
 
 
