@@ -1,8 +1,22 @@
 import pyfiglet
 
+
+
+# TextFormatter.format_text('$r$tlщавель')
+
 art = pyfiglet.figlet_format('maks')
 # print(art)
+rr = 'ghbbb'
 
+def update_index(text):
+    return range(len(text)-1, 1, -1)
+
+for i in update_index(rr):
+    if i>=3:
+        print(rr[i])
+        continue
+    rr = 'llollo'
+    print(rr[i])
 
 # for i in pyfiglet.FigletFont.getFonts():
 #     art = pyfiglet.figlet_format('maks', font=i)

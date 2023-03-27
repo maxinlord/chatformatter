@@ -10,7 +10,7 @@ import html
 import string
 import wikipedia
 
-API_TOKEN = 'токен'
+API_TOKEN = '5664499159:AAHaLuZeCYV49sB6fMC-bB2nklXfEFHp9Ds'
 
 # настройка логгирования
 logging.basicConfig(level=logging.INFO)
@@ -20,14 +20,15 @@ bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
 
 
-exists_format = '''> &r - реверс,
+exists_format = '''> $r - реверс,
 > $u - всё к верхнему регистру,
 > $c - первое слово с большой буквы, остальные с маленькой,
 > $t - каждое слово с большой буквы,
 > $w - подсчет веса слов(-a), подробнее в блоге,
 > $a - ASCii арт из слова(буквы),
 > $e - выполняет математические функции, пример ($e5+5 -> 5+5=10)
-> $rp[old][new] - заменяет все old буквы на new, пример (&rpst stone -> ttone),
+> $/ - таким образом можно использовать символ доллара, пример($uсимвол доллара $/ хех -> СИМВОЛ ДОЛЛАРА $ ХЕХ)
+> $rp[old][new] - заменяет все old буквы на new, пример ($rpst stone -> ttone),
 > $at - ASCii translate перевод из букв в символы
 > $tl - транслитерация с русского на английский
 > $ - знак останова, пример ($ugood$ job -> GOOD job)'''
@@ -62,6 +63,16 @@ class TextFormatter:
 
     @staticmethod
     def reverse(text: str, *args) -> str:
+        not_revers_symbols = ['<code>', '</code>', '$/']
+        for i in not_revers_symbols:
+            if i not in text:
+                continue
+            elif i == '<code>':
+                text = text.replace(i, not_revers_symbols[1][::-1])
+            elif i == '</code>':
+                text = text.replace(i, not_revers_symbols[0][::-1])
+            else:
+                text = text.replace(i, i[::-1])
         return text[::-1]
     
     @staticmethod
@@ -76,7 +87,7 @@ class TextFormatter:
             'm': '爪', 'n': '₦',
             'o': 'Θ', 'p': '₽',
             'q': 'ჹ', 'r': 'ᚱ',
-            's': '$', 't': 'テ',
+            's': '$/', 't': 'テ',
             'u': 'ʊ', 'v': '√',
             'w': '₩', 'x': '乂',
             'y': 'ɣ', 'z': '2'
@@ -84,7 +95,7 @@ class TextFormatter:
         for key in ascii_dict:
             text = text.replace(key, ascii_dict[key])
             text = text.replace(key.upper(), ascii_dict[key])
-        return html.escape(text)
+        return text
     
     @staticmethod
     def transliteration(text: str):
@@ -106,11 +117,11 @@ class TextFormatter:
             'ы': 'y', 'ь': '',
             'э': 'e', 'ю': 'yu',
             'я': 'ya'
-        }
+        } # необходимо заменить двойные и более буквы на одинарные из-за смещения индексов пример(щ[shch]+4)
         for key in ru_dict:
             text = text.replace(key, ru_dict[key])
             text = text.replace(key.upper(), ru_dict[key])
-        return html.escape(text)
+        return text
     
     # @staticmethod
     # def wiki(text):
@@ -212,48 +223,50 @@ class TextFormatter:
     }
 
     @staticmethod
-    def format_text(text: str):
+    def _sign_indexing(text: str):
         text = text.strip(' ')
-        list_ind = [i for i, char in enumerate(text) if char == '$']
+        list_ind = [i for i, char in enumerate(text) if char == '$'][::-1]
+        if not list_ind:
+            return []
         list_to_edit = []
         try:
             text[list_ind[-1]+1]
         except Exception:
             text = text[:list_ind.pop(-1)]
-        ind_back = -2
-        q = []
+        border = len(text)
         for i in list_ind:
-            # if text[i:].partition('&rp')[1] != '':
-            if text[i:i+3] in '$rp':
+            if text[i:i+2] == '$/':
+                continue
+            elif text[i:i+3] == '$rp':
                 ind_rp = text.index('$rp')
-                list_to_edit.append([text[ind_rp:ind_rp+5], ind_rp+5, len(text)])
-                q.append(1)
-                # list_ind.remove(ind_rp)
-                # continue
-                # list_to_edit.append([text[i:i+2], i, -1])
-            elif text[i:i+3] in '$tl':
+                list_to_edit.append([text[ind_rp:ind_rp+5], ind_rp+5, border])
+                break
+            elif text[i:i+3] == '$tl':
                 ind_rp = text.index('$tl')
-                list_to_edit.append([text[ind_rp:ind_rp+3], ind_rp+3, len(text)])
-                q.append(1)
-            elif text[i:i+3] in '$at':
+                # offset += len(result:=TextFormatter.transliteration(text[ind_rp+3:border])) - len(text[ind_rp+3:border])
+                list_to_edit.append([text[ind_rp:ind_rp+3], ind_rp+3, border])
+                break
+            elif text[i:i+3] == '$at':
                 ind_rp = text.index('$at')
-                list_to_edit.append([text[ind_rp:ind_rp+3], ind_rp+3, len(text)])
-                q.append(1)
+                # offset += len(result:=TextFormatter.ascii_translate(text[ind_rp+3:border])) - len(text[ind_rp+3:border])
+                list_to_edit.append([text[ind_rp:ind_rp+3], ind_rp+3, border])
+                break
             elif text[i:i+2] in TextFormatter.format_map:
                 # ind = len(list_ind)-list_ind.index(i)-1
-                list_to_edit.append([text[i:i+2], i+2, len(text)])
-                q.append(1)
+                list_to_edit.append([text[i:i+2], i+2, border])
+                break
             else:
-                if q[-1] == 1:
-                    list_to_edit[-1][-1] = i
-                else:
-                    list_to_edit[ind_back][-1] = i
-                    ind_back += -1
+                border = i
                 list_to_edit.append([text[i:i+1], i, i+1])
-                q.append(0)
-            
+        return list_to_edit
+
+    @staticmethod
+    def _format_text(text: str):
+        list_to_edit = TextFormatter._sign_indexing(text)
+        if not list_to_edit:
+            return text
         to_clean=['스']
-        for x in list_to_edit[::-1]:
+        for x in list_to_edit:
             if x[0] == '$':
                 text = replace_with_index(text, [x[1], x[2]], '스')
                 # to_clean.append('스')
@@ -262,30 +275,38 @@ class TextFormatter:
                 old, new = x[0][3:]
                 t = TextFormatter.replace(text[x[1]:x[2]], old, new)
                 text = replace_with_index(text, [x[1]-5, x[1]], '스'*5)
+                break
                 # to_clean.append('스'*5)
             elif x[0] == '$at':
                 t = TextFormatter.ascii_translate(text[x[1]:x[2]])
                 text = replace_with_index(text, [x[1]-3, x[1]], '스'*3)
+                break
                 # to_clean.append('스'*3)
             elif x[0] == '$tl':
                 t = TextFormatter.transliteration(text[x[1]:x[2]])
                 text = replace_with_index(text, [x[1]-3, x[1]], '스'*3)
+                break
                 # to_clean.append('스'*3)
             else:
                 t = TextFormatter.format_map[x[0]](text[x[1]:x[2]])
                 text = replace_with_index(text, [x[1]-2, x[1]], '스'*2)
+                break
                 # to_clean.append('스'*2)
-            text = replace_with_index(text, [x[1], x[2]], t)
+        text = replace_with_index(text, [x[1], x[2]], t)
         [text:=text.replace(i, '') for i in to_clean]
-        # [text:=text.replace(i, '') for i in TextFormatter.format_map]
-        # [text:=text.replace(i[::-1], '') for i in TextFormatter.format_map]
-        # text = text.replace('$', '')
-        # text = text.replace('스', '')
+        return text
+    
+    @staticmethod
+    def finite_format_text(text: str):
+        count_dollars = text.count('$') - text.count('$/')
+        for _ in range(count_dollars):
+            text=TextFormatter._format_text(text)
+        text = text.replace('$/', '$')
         return text
 
 
 
-# print(TextFormatter.format_text('$r$e5+5'))
+print(TextFormatter.finite_format_text('$e5+5$ good'))
 # print('ss&rsss'.partition('&'))
 
 
@@ -303,7 +324,8 @@ async def inline_echo(inline_query: types.InlineQuery):
     elif '$' in text:
         description = 'Конфуций, 479 год до н.э'
         try:
-            _ = title = TextFormatter.format_text(text)
+            _ = TextFormatter.finite_format_text(text)
+            title = _
         except:
             _ = title = '¯\_(ツ)_/¯'
             description = ''
