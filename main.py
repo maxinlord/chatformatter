@@ -8,9 +8,10 @@ from weightWord import weight_word
 import pyfiglet
 import html
 import string
-import wikipedia
+import make_voice
+import os
 
-API_TOKEN = 'токен'
+API_TOKEN = '-'
 
 # настройка логгирования
 logging.basicConfig(level=logging.INFO)
@@ -27,6 +28,10 @@ exists_format = '''> $r - реверс,
 > $w - подсчет веса слов(-a), подробнее в блоге,
 > $a - ASCii арт из слова(буквы),
 > $e - выполняет математические функции, пример ($e5+5 -> 5+5=10)
+> $v - создает аудио с введеным текстом и выбранным языком произношения, пример ($vruТекст$) 
+обязательные условия:
+    >> в конце поставить знак $
+    >> указать язык произношения в двухбукввеном формате, пример (ru, en, ja, zh)
 > $/ - таким образом можно использовать символ доллара, пример($uсимвол доллара $/ хех -> СИМВОЛ ДОЛЛАРА $ ХЕХ)
 > $ud - переворачивает текст вверх ногами
 > $rp[old][new] - заменяет все old буквы на new, пример ($rpst stone -> ttone),
@@ -295,6 +300,7 @@ class TextFormatter:
                 ind_rp = text.index('$rp')
                 list_to_edit.append([text[ind_rp:ind_rp+5], ind_rp+5, border])
                 break
+            
             elif text[i:i+3] == '$tl':
                 ind_rp = text.index('$tl')
                 # offset += len(result:=TextFormatter.transliteration(text[ind_rp+3:border])) - len(text[ind_rp+3:border])
@@ -369,21 +375,32 @@ class TextFormatter:
 
 
 
-print(TextFormatter.finite_format_text('$udты бот'))
+# print(TextFormatter.finite_format_text('$vrudadadad'))
 # print('ss&rsss'.partition('&'))
 
+# @dp.message_handler()
+# async def inline_echo(message: types.Message):
+#     print(message.chat.id)
 
 # обработка инлайн-запросов
 @dp.inline_handler()
 async def inline_echo(inline_query: types.InlineQuery):
     # получаем текст запроса от пользователя
     text = inline_query.query
+    title = ':/'
     description = '...'
+    type_mess = 'text'
+    idu = inline_query.from_user.id
     if text == '$info':
         _ = title = exists_format
     # elif text.startswith('$wiki'):
     #     await bot.answer_inline_query(inline_query.id, results=TextFormatter.wiki(text.strip('$wiki').strip()), cache_time=timedelta(microseconds=50))
     #     return
+    elif text[:2] == '$v':
+        if text[-1] == '$':
+            type_mess = 'voice'
+            lang = text[2:4]
+            make_voice.make_voice(text=text[4:-1], lang=lang, id_user=idu)
     elif '$' in text:
         description = 'Конфуций, 479 год до н.э'
         try:
@@ -396,10 +413,32 @@ async def inline_echo(inline_query: types.InlineQuery):
         title = text
         _ = html.escape(text)
    
+
     # формируем ответ для пользователя
+
+    if type_mess == 'voice':
+        path = f'voices/{idu}.mp3'
+        audio_file = open(path, 'rb')
+
+        response = await bot.send_audio(chat_id='-', audio=audio_file, title='прослушай это!')
+        print(inline_query.from_user.id)
+        # Получение идентификатора файла
+        file_id = response.audio.file_id
+
+        # Создание объекта InlineQueryResultAudio с использованием идентификатора файла
+        result_id = '1'
+        results = [
+            types.InlineQueryResultAudio(id=result_id, 
+            audio_url=file_id, 
+            title='Audio Message')
+        ]
+        # отправляем ответ пользователю
+        await bot.answer_inline_query(inline_query.id, results=results, cache_time=timedelta(microseconds=400))
+        os.remove(path)
+        return
     results = [
         types.InlineQueryResultArticle(
-            id='1',
+            id=idu,
             title=title,
             description=description,
             thumb_url='https://avatars.mds.yandex.net/i?id=3288914965329bedc36d4c39f7ef1552_l-5322671-images-thumbs&ref=rim&n=13',
